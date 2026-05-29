@@ -1,65 +1,76 @@
-import Image from "next/image";
+"use client";
+import { useState, useEffect } from "react";
+import Navbar from "@/components/Navbar";
+import CollegeCard from "@/components/CollegeCard";
 
 export default function Home() {
+  const [colleges, setColleges] = useState([]);
+  const [search, setSearch] = useState("");
+  const [maxFees, setMaxFees] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  // Jab bhi search ya fees change ho, API call hogi
+  useEffect(() => {
+    fetchColleges();
+  }, [search, maxFees]);
+
+  const fetchColleges = async () => {
+    setLoading(true);
+    let url = `/api/colleges?search=${search}`;
+    if (maxFees) url += `&maxFees=${maxFees}`;
+    
+    try {
+      const res = await fetch(url);
+      const result = await res.json();
+      setColleges(result.data || []);
+    } catch (err) {
+      console.error("Error fetching colleges", err);
+    }
+    setLoading(false);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="min-h-screen bg-gray-50 text-black">
+      <Navbar />
+      
+      <div className="max-w-6xl mx-auto p-8">
+        <h1 className="text-4xl font-bold mb-8">Discover Top Colleges</h1>
+        
+        {/* Search & Filters Section */}
+        <div className="flex flex-col md:flex-row gap-4 mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <input
+            type="text"
+            placeholder="Search colleges by name..."
+            className="flex-1 p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          
+          <select 
+            className="p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
+            value={maxFees}
+            onChange={(e) => setMaxFees(e.target.value)}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <option value="">Any Fees</option>
+            <option value="1000000">Under ₹10 Lakhs</option>
+            <option value="1500000">Under ₹15 Lakhs</option>
+            <option value="2000000">Under ₹20 Lakhs</option>
+          </select>
         </div>
-      </main>
-    </div>
+
+        {/* Loading State & Grid */}
+        {loading ? (
+          <div className="text-center py-20 text-gray-500">Loading colleges...</div>
+        ) : colleges.length === 0 ? (
+          <div className="text-center py-20 text-gray-500">No colleges found matching your criteria.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {colleges.map((college: any) => (
+              <CollegeCard key={college.id} college={college} />
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
